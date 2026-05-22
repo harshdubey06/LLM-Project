@@ -1,11 +1,13 @@
 export default function PromptPanel({
   requirement,
   outputType,
+  layoutPreference,
   isLoading,
   canGenerate,
   error,
   onRequirementChange,
   onOutputTypeChange,
+  onLayoutPreferenceChange,
   onGenerate
 }) {
   return (
@@ -31,6 +33,20 @@ export default function PromptPanel({
       <select id="output-type" value={outputType} onChange={(event) => onOutputTypeChange(event.target.value)}>
         <option value="html">Self-contained HTML</option>
         <option value="react">React component</option>
+      </select>
+
+      <label className="field-label" htmlFor="layout-preference">
+        Layout
+      </label>
+      <select
+        id="layout-preference"
+        value={layoutPreference}
+        onChange={(event) => onLayoutPreferenceChange(event.target.value)}
+      >
+        <option value="single-column">Single-column</option>
+        <option value="two-column">Two-column</option>
+        <option value="card-sections">Card-based sections</option>
+        <option value="multi-step">Multi-step</option>
       </select>
 
       {error ? <p className="error-message">{error}</p> : null}

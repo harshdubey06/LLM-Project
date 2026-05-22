@@ -1,0 +1,27 @@
+# Project requirements - do not install from here automatically
+
+Runtime tools:
+- Node.js 18 or newer
+- npm
+- Ollama
+- Local model: qwen2.5-coder:7b
+
+Frontend npm packages:
+- react
+- react-dom
+- vite
+- @vitejs/plugin-react
+- @monaco-editor/react
+- tailwindcss
+- postcss
+- autoprefixer
+
+Backend npm packages:
+- express
+- cors
+
+Manual setup commands:
+- ollama pull qwen2.5-coder:7b
+- ollama serve
+- cd backend && npm install
+- cd frontend && npm install

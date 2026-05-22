@@ -9,6 +9,8 @@ AI-powered form builder using a React frontend, an Express backend, and a local 
 ├── frontend/
 │   ├── index.html
 │   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
 │   ├── vite.config.js
 │   └── src/
 │       ├── main.jsx
@@ -29,6 +31,7 @@ AI-powered form builder using a React frontend, an Express backend, and a local 
 │   └── ollamaClient.js
 ├── pipeline.md
 ├── pipeline_modified_local_qwen.md
+├── requirement.txt
 └── README.md
 ```
 

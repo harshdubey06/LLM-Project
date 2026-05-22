@@ -1,4 +1,4 @@
-export function buildPrompt({ requirement, outputType }) {
+export function buildPrompt({ requirement, outputType, layoutPreference }) {
   if (outputType === "react") {
     return `${reactSystemPrompt}
 
@@ -7,6 +7,8 @@ Build a form for the following requirement:
 """
 ${requirement}
 """
+
+Requested layout: ${layoutPreference}
 
 Return only the React component code.`;
   }
@@ -20,6 +22,7 @@ ${requirement}
 """
 
 Output type: html
+Requested layout: ${layoutPreference}
 
 Return only the code.`;
 }

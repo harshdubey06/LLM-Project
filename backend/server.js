@@ -16,6 +16,7 @@ app.get("/api/health", (_request, response) => {
 app.post("/api/generate-form", async (request, response) => {
   const requirement = String(request.body?.requirement || "").trim();
   const outputType = request.body?.outputType === "react" ? "react" : "html";
+  const layoutPreference = normalizeLayoutPreference(request.body?.layoutPreference);
 
   if (!requirement) {
     return response.status(400).json({
@@ -25,7 +26,7 @@ app.post("/api/generate-form", async (request, response) => {
   }
 
   try {
-    const prompt = buildPrompt({ requirement, outputType });
+    const prompt = buildPrompt({ requirement, outputType, layoutPreference });
     const code = await generateWithOllama(prompt);
 
     if (!isValidGeneratedForm(code, outputType)) {
@@ -52,6 +53,11 @@ function isValidGeneratedForm(code, outputType) {
   if (!code || typeof code !== "string") return false;
   if (outputType === "react") return /<form[\s>]/i.test(code);
   return /<form[\s>]/i.test(code) && /<\/form>/i.test(code);
+}
+
+function normalizeLayoutPreference(value) {
+  const allowed = new Set(["single-column", "two-column", "card-sections", "multi-step"]);
+  return allowed.has(value) ? value : "two-column";
 }
 
 function friendlyOllamaError(error) {

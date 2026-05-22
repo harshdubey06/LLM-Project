@@ -31,6 +31,7 @@ const starterCode = `<!DOCTYPE html>
 export default function App() {
   const [requirement, setRequirement] = useState("");
   const [outputType, setOutputType] = useState("html");
+  const [layoutPreference, setLayoutPreference] = useState("two-column");
   const [code, setCode] = useState(starterCode);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,7 @@ export default function App() {
     setError("");
 
     try {
-      const result = await generateForm({ requirement, outputType });
+      const result = await generateForm({ requirement, outputType, layoutPreference });
       setCode(result.code);
     } catch (err) {
       setError(err.message || "Unable to generate form code.");
@@ -59,11 +60,13 @@ export default function App() {
         <PromptPanel
           requirement={requirement}
           outputType={outputType}
+          layoutPreference={layoutPreference}
           isLoading={isLoading}
           canGenerate={canGenerate}
           error={error}
           onRequirementChange={setRequirement}
           onOutputTypeChange={setOutputType}
+          onLayoutPreferenceChange={setLayoutPreference}
           onGenerate={handleGenerate}
         />
         <LivePreview code={code} />
@@ -71,7 +74,7 @@ export default function App() {
 
       <section className="editor-section">
         <Toolbar code={code} outputType={outputType} onRegenerate={handleGenerate} canRegenerate={canGenerate} />
-        <CodeEditor code={code} onChange={setCode} />
+        <CodeEditor code={code} outputType={outputType} onChange={setCode} />
       </section>
     </main>
   );

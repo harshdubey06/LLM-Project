@@ -1,11 +1,11 @@
 import Editor from "@monaco-editor/react";
 
-export default function CodeEditor({ code, onChange }) {
+export default function CodeEditor({ code, outputType, onChange }) {
   return (
     <div className="code-editor">
       <Editor
         height="420px"
-        defaultLanguage="html"
+        language={outputType === "react" ? "javascript" : "html"}
         theme="vs-dark"
         value={code}
         options={{

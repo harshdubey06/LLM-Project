@@ -1,5 +1,5 @@
 const OLLAMA_CHAT_URL = process.env.OLLAMA_CHAT_URL || "http://localhost:11434/api/chat";
-const MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:7b";
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:14b";
 
 export async function chatWithOllama(messages, options = {}) {
   const response = await fetch(OLLAMA_CHAT_URL, {
@@ -8,7 +8,7 @@ export async function chatWithOllama(messages, options = {}) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: OLLAMA_MODEL,
       messages,
       stream: false,
       options: {

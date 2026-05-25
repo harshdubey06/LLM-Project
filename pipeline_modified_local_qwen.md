@@ -88,13 +88,13 @@ Use Qwen through Ollama.
 ### Recommended starting model
 
 ```bash
-ollama pull qwen2.5-coder:7b
+ollama pull qwen2.5-coder:14b
 ```
 
 Run/test it locally:
 
 ```bash
-ollama run qwen2.5-coder:7b
+ollama run qwen2.5-coder:14b
 ```
 
 ### Why this model
@@ -172,23 +172,23 @@ POST /api/generate-form
 
 The backend should call Ollama locally.
 
-### Ollama generate endpoint
+### Ollama chat endpoint
 
 ```text
-http://localhost:11434/api/generate
+http://localhost:11434/api/chat
 ```
 
 ### Recommended backend call shape
 
 ```js
-const response = await fetch("http://localhost:11434/api/generate", {
+const response = await fetch("http://localhost:11434/api/chat", {
   method: "POST",
   headers: {
     "Content-Type": "application/json"
   },
   body: JSON.stringify({
-    model: "qwen2.5-coder:7b",
-    prompt: finalPrompt,
+    model: "qwen2.5-coder:14b",
+    messages,
     stream: false,
     options: {
       temperature: 0.2,
@@ -322,7 +322,7 @@ URL.revokeObjectURL(url);
 |---|---|
 | Empty requirement | Disable Generate button and show inline message |
 | Ollama not running | Show: `Ollama is not running. Start it using ollama serve.` |
-| Model not installed | Show: `Qwen model not found. Run ollama pull qwen2.5-coder:7b.` |
+| Model not installed | Show: `Qwen model not found. Run ollama pull qwen2.5-coder:14b.` |
 | Network error | Retry once, then show clear error |
 | Invalid/non-form output | Show regenerate option and keep previous valid output if available |
 | Very vague user prompt | Still generate a reasonable form using inferred fields |
@@ -449,7 +449,7 @@ Do not store API keys because this version does not use hosted LLM APIs.
 ### Install Ollama model
 
 ```bash
-ollama pull qwen2.5-coder:7b
+ollama pull qwen2.5-coder:14b
 ```
 
 ### Start Ollama

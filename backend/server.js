@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { continueRequirementInterview, finalizeForm, generateFromSchema } from "./formPipeline.js";
+import { OLLAMA_MODEL } from "./ollamaClient.js";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -113,7 +114,7 @@ function friendlyError(error) {
   const lowerMessage = message.toLowerCase();
 
   if (lowerMessage.includes("model") && (lowerMessage.includes("not found") || lowerMessage.includes("not installed"))) {
-    return "Qwen model not found. Run ollama pull qwen2.5-coder:7b.";
+    return `Qwen model not found. Run ollama pull ${OLLAMA_MODEL}.`;
   }
 
   return message || "Unable to generate form code. Please try again.";

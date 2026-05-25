@@ -40,7 +40,7 @@ AI-powered form builder using a React frontend, an Express backend, and a local 
 Install and start the local model:
 
 ```bash
-ollama pull qwen2.5-coder:7b
+ollama pull qwen2.5-coder:14b
 ollama serve
 ```
 

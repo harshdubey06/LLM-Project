@@ -3,11 +3,9 @@ import {
   buildHtmlMessages,
   buildInterviewMessages,
   buildReactMessages,
-  buildRepairMessages,
   buildSchemaMessages
 } from "./prompts.js";
 import { parseJsonObject, normalizeAndValidateSchema } from "./schemaValidator.js";
-import { validateGeneratedCode } from "./codeValidator.js";
 
 export async function continueRequirementInterview({ messages, layoutPreference, outputType }) {
   const latestUserMessage = getLatestUserMessage(messages);
@@ -71,8 +69,8 @@ export async function finalizeForm({ messages, requirement, layoutPreference, ou
   }
 
   if (outputType === "react") {
-    const reactCode = await generateAndValidateCode({ schema, outputType: "react" });
-    const previewHtml = await generateAndValidateCode({ schema, outputType: "html" });
+    const reactCode = await generateCode({ schema, outputType: "react" });
+    const previewHtml = await generateCode({ schema, outputType: "html" });
 
     return {
       schema,
@@ -82,7 +80,7 @@ export async function finalizeForm({ messages, requirement, layoutPreference, ou
     };
   }
 
-  const html = await generateAndValidateCode({ schema, outputType: "html" });
+  const html = await generateCode({ schema, outputType: "html" });
 
   return {
     schema,
@@ -103,34 +101,18 @@ export async function generateFromSchema({ schema: inputSchema, layoutPreference
     return {
       schema,
       outputType,
-      code: await generateAndValidateCode({ schema, outputType: "react" }),
-      previewHtml: await generateAndValidateCode({ schema, outputType: "html" })
+      code: await generateCode({ schema, outputType: "react" }),
+      previewHtml: await generateCode({ schema, outputType: "html" })
     };
   }
 
-  const html = await generateAndValidateCode({ schema, outputType: "html" });
+  const html = await generateCode({ schema, outputType: "html" });
   return { schema, outputType, code: html, previewHtml: html };
 }
 
-async function generateAndValidateCode({ schema, outputType }) {
+async function generateCode({ schema, outputType }) {
   const messages = outputType === "react" ? buildReactMessages({ schema }) : buildHtmlMessages({ schema });
-  const firstCode = extractCode(await chatWithOllama(messages));
-  const firstErrors = validateGeneratedCode(firstCode, outputType, schema);
-
-  if (firstErrors.length === 0) {
-    return firstCode;
-  }
-
-  const repairedCode = extractCode(
-    await chatWithOllama(buildRepairMessages({ schema, outputType, code: firstCode, errors: firstErrors }))
-  );
-  const repairedErrors = validateGeneratedCode(repairedCode, outputType, schema);
-
-  if (repairedErrors.length > 0) {
-    throw validationError("The model returned code that does not match the finalized form.", repairedErrors);
-  }
-
-  return repairedCode;
+  return extractCode(await chatWithOllama(messages));
 }
 
 function normalizeConversation({ messages, requirement }) {

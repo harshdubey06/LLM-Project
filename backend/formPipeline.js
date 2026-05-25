@@ -19,6 +19,10 @@ export async function continueRequirementInterview({ messages, layoutPreference,
     };
   }
 
+  if (isFinalizationMessage(latestUserMessage)) {
+    return { status: "ready_to_finalize" };
+  }
+
   const answer = await chatWithOllama(
     buildInterviewMessages({
       messages,
@@ -32,9 +36,19 @@ export async function continueRequirementInterview({ messages, layoutPreference,
     return { status: "ready_to_finalize" };
   }
 
+  const cleanedAnswer = answer
+    .split("\n")
+    .filter((line) => line.trim() !== "READY_TO_FINALIZE")
+    .join("\n")
+    .trim();
+
+  if (!cleanedAnswer) {
+    return { status: "ready_to_finalize" };
+  }
+
   return {
     status: "collecting",
-    message: answer
+    message: cleanedAnswer
   };
 }
 
@@ -144,6 +158,10 @@ function getLatestUserMessage(messages = []) {
   }
 
   return "";
+}
+
+function isFinalizationMessage(message) {
+  return /\b(ok final done|generate now|final|done)\b/i.test(String(message || ""));
 }
 
 function validationError(message, details) {

@@ -104,7 +104,11 @@ function validateLayout({ text, outputType, schema, errors }) {
   }
 
   if (layout === "two-column") {
-    const hasGrid = /grid-template-columns\s*:\s*repeat\s*\(\s*2/i.test(text) || /grid-template-columns\s*:\s*[^;]*1fr[^;]*1fr/i.test(text);
+    const hasGrid =
+      /grid-template-columns\s*:\s*repeat\s*\(\s*2/i.test(text) ||
+      /grid-template-columns\s*:\s*[^;]*1fr[^;]*1fr/i.test(text) ||
+      /gridTemplateColumns\s*:\s*["'`]?repeat\s*\(\s*2/i.test(text) ||
+      /gridTemplateColumns\s*:\s*["'`]?[^"'`,}]*1fr[^"'`,}]*1fr/i.test(text);
     const hasFlexTwoColumn = /display\s*:\s*flex/i.test(text) && /flex-wrap\s*:\s*wrap/i.test(text);
     const hasTwoColumnClass = /two-column|form-grid|grid/i.test(text);
 

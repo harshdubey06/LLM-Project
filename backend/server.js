@@ -110,7 +110,9 @@ function friendlyError(error) {
     return "Ollama is not running. Start it using ollama serve.";
   }
 
-  if (message.toLowerCase().includes("model")) {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("model") && (lowerMessage.includes("not found") || lowerMessage.includes("not installed"))) {
     return "Qwen model not found. Run ollama pull qwen2.5-coder:7b.";
   }
 

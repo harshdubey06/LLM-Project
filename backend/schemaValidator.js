@@ -13,6 +13,7 @@ const allowedFieldTypes = new Set([
   "checkbox",
   "file"
 ]);
+const emailPattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
 export function parseJsonObject(raw) {
   const text = String(raw || "").trim();
@@ -59,6 +60,9 @@ export function normalizeAndValidateSchema(input, layoutPreference = "two-column
 
       const type = allowedFieldTypes.has(field?.type) ? field.type : inferType(label);
       const validation = normalizeValidation(field?.validation);
+      if (type === "email" && !validation.pattern) {
+        validation.pattern = emailPattern;
+      }
       const required = typeof field?.required === "boolean" ? field.required : Boolean(validation.required);
 
       if (!allowedFieldTypes.has(type)) {

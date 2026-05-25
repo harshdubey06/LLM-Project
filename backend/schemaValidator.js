@@ -13,7 +13,7 @@ const allowedFieldTypes = new Set([
   "checkbox",
   "file"
 ]);
-const emailPattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+const emailPattern = "^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
 
 export function parseJsonObject(raw) {
   const text = String(raw || "").trim();

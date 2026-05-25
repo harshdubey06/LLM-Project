@@ -107,10 +107,6 @@ function normalizeOutputType(value) {
 function friendlyError(error) {
   const message = error?.message || "";
 
-  if (message.includes("ECONNREFUSED") || message.includes("fetch failed")) {
-    return "Ollama is not running. Start it using ollama serve.";
-  }
-
   const lowerMessage = message.toLowerCase();
 
   if (lowerMessage.includes("model") && (lowerMessage.includes("not found") || lowerMessage.includes("not installed"))) {

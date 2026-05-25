@@ -191,8 +191,8 @@ Generate one exportable React component from the provided form schema.
 Return only JSX/JavaScript code.
 Do not include markdown.
 Do not include explanations.
-Do not import external libraries.
-Follow the examples' structure exactly: default function name, local style objects, no imports, semantic labels, exact validation props.`
+Do not import third-party libraries.
+Use clean JSX, semantic labels, and local style objects.`
     },
     {
       role: "user",
@@ -200,144 +200,8 @@ Follow the examples' structure exactly: default function name, local style objec
 
 ${JSON.stringify(schema, null, 2)}
 
-Few-shot example for two-column React output:
-
-Schema:
-{
-  "title": "College Admission Form",
-  "layout": "two-column",
-  "sections": [
-    {
-      "id": "main",
-      "title": "Candidate Details",
-      "fields": [
-        {
-          "id": "candidateName",
-          "label": "Candidate Name",
-          "type": "text",
-          "required": true,
-          "placeholder": "",
-          "autocomplete": "",
-          "validation": {},
-          "options": []
-        },
-        {
-          "id": "twelfthMarks",
-          "label": "12th Marks",
-          "type": "number",
-          "required": true,
-          "placeholder": "",
-          "autocomplete": "",
-          "validation": {
-            "min": 0,
-            "max": 100
-          },
-          "options": []
-        }
-      ]
-    }
-  ],
-  "submitLabel": "Submit"
-}
-
-Correct React output shape:
-export default function GeneratedForm() {
-  const styles = {
-    page: {
-      minHeight: "100vh",
-      background: "#f4f7fb",
-      padding: "32px",
-      fontFamily: "Arial, sans-serif",
-      color: "#182033"
-    },
-    form: {
-      maxWidth: "820px",
-      margin: "0 auto",
-      background: "#ffffff",
-      border: "1px solid #d9e0ea",
-      borderRadius: "8px",
-      padding: "24px",
-      boxShadow: "0 16px 45px rgba(25, 38, 70, 0.08)"
-    },
-    grid: {
-      display: "grid",
-      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-      gap: "16px"
-    },
-    field: {
-      display: "grid",
-      gap: "6px"
-    },
-    label: {
-      fontWeight: 700
-    },
-    input: {
-      width: "100%",
-      boxSizing: "border-box",
-      border: "1px solid #bec8d6",
-      borderRadius: "8px",
-      padding: "11px 12px"
-    },
-    actions: {
-      gridColumn: "1 / -1",
-      marginTop: "8px"
-    },
-    button: {
-      border: 0,
-      borderRadius: "8px",
-      background: "#2563eb",
-      color: "#ffffff",
-      padding: "12px 16px",
-      fontWeight: 700
-    }
-  };
-
-  return (
-    <main style={styles.page}>
-      <form style={styles.form}>
-        <h1>College Admission Form</h1>
-        <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-          <legend>Candidate Details</legend>
-          <div style={styles.grid}>
-            <div style={styles.field}>
-              <label style={styles.label} htmlFor="candidateName">Candidate Name</label>
-              <input style={styles.input} id="candidateName" name="candidateName" type="text" required />
-            </div>
-            <div style={styles.field}>
-              <label style={styles.label} htmlFor="twelfthMarks">12th Marks</label>
-              <input style={styles.input} id="twelfthMarks" name="twelfthMarks" type="number" required min="0" max="100" />
-            </div>
-            <div style={styles.actions}>
-              <button style={styles.button} type="submit">Submit</button>
-            </div>
-          </div>
-        </fieldset>
-      </form>
-    </main>
-  );
-}
-
-Few-shot example for select field:
-
-Correct select output shape:
-export default function GeneratedForm() {
-  return (
-    <form>
-      <label htmlFor="course">Course</label>
-      <select id="course" name="course" required>
-        <option value="">Select Course</option>
-        <option value="bsc">BSc</option>
-        <option value="ba">BA</option>
-      </select>
-      <button type="submit">Submit</button>
-    </form>
-  );
-}
-
 Hard requirements:
 - Export a default function named GeneratedForm.
-- The first line of the returned code must be: export default function GeneratedForm() {
-- Do not write import statements.
 - Use semantic form elements.
 - Every control must have a visible label with matching htmlFor/id.
 - Use the exact fields from the schema. Do not add or remove fields.
@@ -345,11 +209,11 @@ Hard requirements:
 - Preserve exact numeric validation values from schema, such as min="0" and max="100".
 - Use inline styles or locally defined style objects only.
 - Do not use Tailwind classes in generated React unless the user explicitly asks for Tailwind output.
-- Include controlled state only if needed for multi-step navigation or grouped checkbox handling.
+- Render select, radio, and checkbox options from the schema.
 - For two-column layout, include a local style object with gridTemplateColumns: "repeat(2, minmax(0, 1fr))".
 - If layout is not multi-step, do not include Previous or Next buttons.
 - If layout is not multi-step, do not include multi-step state.
-- For multi-step layout only, implement Previous/Next state locally with useState.
+- For multi-step layout only, import useState from "react" and implement Previous/Next state locally.
 - Include one submit button.
 - Do not disable the submit button by default.
 - Do not call external APIs.`

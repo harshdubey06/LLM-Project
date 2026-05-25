@@ -17,6 +17,7 @@ body {
 }
 
 button,
+input,
 select,
 textarea {
   font: inherit;
@@ -83,6 +84,7 @@ h2 {
 }
 
 textarea,
+input,
 select {
   width: 100%;
   border: 1px solid #bec8d6;
@@ -93,6 +95,7 @@ select {
 }
 
 textarea:focus,
+input:focus,
 select:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
@@ -107,6 +110,11 @@ textarea {
 
 select {
   padding: 12px;
+}
+
+input {
+  min-height: 42px;
+  padding: 10px 12px;
 }
 
 button {
@@ -130,6 +138,152 @@ button:disabled {
   border-color: #2563eb;
   background: #2563eb;
   color: #ffffff;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mode-tabs button {
+  min-height: 36px;
+}
+
+.mode-tabs button.active {
+  border-color: #0f766e;
+  background: #e7f6f3;
+  color: #0b5f59;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.chat-panel,
+.wizard-panel,
+.schema-panel {
+  margin-top: 16px;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  color: #526174;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.message-list {
+  display: grid;
+  gap: 10px;
+  max-height: 300px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #d9e0ea;
+  border-radius: 8px;
+  background: #f7f9fc;
+}
+
+.message {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.message.user {
+  border-left: 3px solid #2563eb;
+}
+
+.message.assistant {
+  border-left: 3px solid #0f766e;
+}
+
+.message strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #26324a;
+  font-size: 0.82rem;
+}
+
+.message p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.chat-input {
+  min-height: 118px;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.action-row .primary-action {
+  margin-top: 0;
+}
+
+.manual-fields {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.manual-field {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d9e0ea;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #26324a;
+  font-weight: 700;
+}
+
+.inline-check input {
+  width: auto;
+  min-height: 0;
+}
+
+.schema-panel pre {
+  max-height: 360px;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #111827;
+  color: #e5e7eb;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.schema-editor {
+  min-height: 360px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #e5e7eb;
+  background: #111827;
+}
+
+.empty-state {
+  margin: 0;
+  color: #526174;
+  font-weight: 700;
 }
 
 .error-message {

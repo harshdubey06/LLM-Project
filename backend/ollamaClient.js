@@ -1,19 +1,21 @@
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434/api/generate";
+const OLLAMA_CHAT_URL = process.env.OLLAMA_CHAT_URL || "http://localhost:11434/api/chat";
 const MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:7b";
 
-export async function generateWithOllama(prompt) {
-  const response = await fetch(OLLAMA_URL, {
+export async function chatWithOllama(messages, options = {}) {
+  const response = await fetch(OLLAMA_CHAT_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model: MODEL,
-      prompt,
+      messages,
       stream: false,
       options: {
-        temperature: 0.2,
-        top_p: 0.9
+        temperature: 0.1,
+        top_p: 0.8,
+        repeat_penalty: 1.05,
+        ...options
       }
     })
   });
@@ -24,12 +26,12 @@ export async function generateWithOllama(prompt) {
     throw new Error(data.error || `Ollama request failed with status ${response.status}`);
   }
 
-  return extractCode(data.response || "");
+  return String(data.message?.content || "").trim();
 }
 
-function extractCode(raw) {
+export function extractCode(raw) {
   if (!raw || typeof raw !== "string") return "";
 
-  const fenced = raw.match(/```(?:html|jsx|javascript|react)?\s*([\s\S]*?)```/i);
+  const fenced = raw.match(/```(?:html|jsx|javascript|react|json)?\s*([\s\S]*?)```/i);
   return (fenced ? fenced[1] : raw).trim();
 }

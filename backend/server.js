@@ -1,46 +1,91 @@
 import express from "express";
 import cors from "cors";
-import { buildPrompt } from "./prompts.js";
-import { generateWithOllama } from "./ollamaClient.js";
+import { continueRequirementInterview, finalizeForm, generateFromSchema } from "./formPipeline.js";
 
 const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" }));
 
 app.get("/api/health", (_request, response) => {
   response.json({ success: true });
 });
 
-app.post("/api/generate-form", async (request, response) => {
-  const requirement = String(request.body?.requirement || "").trim();
-  const outputType = request.body?.outputType === "react" ? "react" : "html";
-  const layoutPreference = normalizeLayoutPreference(request.body?.layoutPreference);
+app.post("/api/chat-requirements", async (request, response) => {
+  try {
+    const result = await continueRequirementInterview({
+      messages: Array.isArray(request.body?.messages) ? request.body.messages : [],
+      layoutPreference: normalizeLayoutPreference(request.body?.layoutPreference),
+      outputType: normalizeOutputType(request.body?.outputType)
+    });
 
-  if (!requirement) {
-    return response.status(400).json({
+    response.json({ success: true, ...result });
+  } catch (error) {
+    response.status(error.statusCode || 502).json({
       success: false,
-      error: "Enter a form requirement before generating."
+      error: friendlyError(error),
+      details: error.details || []
     });
   }
+});
 
+app.post("/api/finalize-form", async (request, response) => {
   try {
-    const prompt = buildPrompt({ requirement, outputType, layoutPreference });
-    const code = await generateWithOllama(prompt);
+    const result = await finalizeForm({
+      messages: Array.isArray(request.body?.messages) ? request.body.messages : [],
+      requirement: request.body?.requirement,
+      layoutPreference: normalizeLayoutPreference(request.body?.layoutPreference),
+      outputType: normalizeOutputType(request.body?.outputType),
+      fieldCount: request.body?.fieldCount,
+      manualFields: Array.isArray(request.body?.manualFields) ? request.body.manualFields : []
+    });
 
-    if (!isValidGeneratedForm(code, outputType)) {
-      return response.status(422).json({
-        success: false,
-        error: "The model returned code that does not look like a valid form. Try regenerating."
-      });
-    }
-
-    return response.json({ success: true, code, outputType });
+    response.json({ success: true, ...result });
   } catch (error) {
-    return response.status(502).json({
+    response.status(error.statusCode || 502).json({
       success: false,
-      error: friendlyOllamaError(error)
+      error: friendlyError(error),
+      details: error.details || []
+    });
+  }
+});
+
+app.post("/api/generate-from-schema", async (request, response) => {
+  try {
+    const result = await generateFromSchema({
+      schema: request.body?.schema,
+      layoutPreference: normalizeLayoutPreference(request.body?.layoutPreference),
+      outputType: normalizeOutputType(request.body?.outputType)
+    });
+
+    response.json({ success: true, ...result });
+  } catch (error) {
+    response.status(error.statusCode || 502).json({
+      success: false,
+      error: friendlyError(error),
+      details: error.details || []
+    });
+  }
+});
+
+app.post("/api/generate-form", async (request, response) => {
+  try {
+    const result = await finalizeForm({
+      messages: Array.isArray(request.body?.messages) ? request.body.messages : [],
+      requirement: request.body?.requirement,
+      layoutPreference: normalizeLayoutPreference(request.body?.layoutPreference),
+      outputType: normalizeOutputType(request.body?.outputType),
+      fieldCount: request.body?.fieldCount,
+      manualFields: Array.isArray(request.body?.manualFields) ? request.body.manualFields : []
+    });
+
+    response.json({ success: true, ...result });
+  } catch (error) {
+    response.status(error.statusCode || 502).json({
+      success: false,
+      error: friendlyError(error),
+      details: error.details || []
     });
   }
 });
@@ -49,18 +94,16 @@ app.listen(port, () => {
   console.log(`Backend listening on http://localhost:${port}`);
 });
 
-function isValidGeneratedForm(code, outputType) {
-  if (!code || typeof code !== "string") return false;
-  if (outputType === "react") return /<form[\s>]/i.test(code);
-  return /<form[\s>]/i.test(code) && /<\/form>/i.test(code);
-}
-
 function normalizeLayoutPreference(value) {
   const allowed = new Set(["single-column", "two-column", "card-sections", "multi-step"]);
   return allowed.has(value) ? value : "two-column";
 }
 
-function friendlyOllamaError(error) {
+function normalizeOutputType(value) {
+  return value === "react" ? "react" : "html";
+}
+
+function friendlyError(error) {
   const message = error?.message || "";
 
   if (message.includes("ECONNREFUSED") || message.includes("fetch failed")) {
@@ -71,5 +114,5 @@ function friendlyOllamaError(error) {
     return "Qwen model not found. Run ollama pull qwen2.5-coder:7b.";
   }
 
-  return "Unable to generate form code. Please try again.";
+  return message || "Unable to generate form code. Please try again.";
 }

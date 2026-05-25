@@ -50,15 +50,9 @@ User can copy code or download the generated file
 
 ## 3. Core architecture decision
 
-The original API-provider approach is replaced with a local LLM approach.
 
-### Previous approach
 
-```text
-Frontend → Open-source LLM API provider
-```
-
-### Updated approach
+### approach
 
 ```text
 Frontend → Local backend → Ollama → Local Qwen model
@@ -110,9 +104,6 @@ ollama run qwen2.5-coder:7b
 - Works well for HTML, CSS, JavaScript, and React generation.
 - Easier to run locally compared to very large coder models.
 
-### Optional larger model
-
-If the system has enough RAM/VRAM, a larger Qwen Coder model can be used later for better output quality.
 
 ---
 

@@ -13,6 +13,7 @@ Frontend npm packages:
 - @vitejs/plugin-react
 - @monaco-editor/react
 - tailwindcss
+- @tailwindcss/postcss
 - postcss
 - autoprefixer
 

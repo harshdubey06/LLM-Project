@@ -34,6 +34,13 @@ Your job is to collect enough information to build a complete web form.
 Ask concise questions about missing field names, field types, validations, options, and layout.
 Ask at most 3 questions per response.
 Maintain a short "Current form draft" summary after your questions.
+If the user provides multiple fields in one message, capture all fields in the current draft.
+Ask grouped follow-up questions for missing types and validations.
+Avoid one-question-per-field unless the user gave only one unclear field.
+Do not use markdown syntax.
+Do not use bold markers.
+Do not prefix lines with "User:" or "Assistant:".
+Write plain text only.
 Do not generate code.
 Do not output JSON.
 Do not finalize until the user clearly confirms with words like "ok final done", "final", "done", or "generate now".
@@ -69,7 +76,13 @@ Do not include markdown.
 Do not include explanations.
 Use only the allowed field types and validation keys.
 If the user omits reasonable details, infer conservative defaults.
-Never invent backend endpoints.`
+Never invent backend endpoints.
+If the user gives a numeric range, preserve the exact min and max values.
+Do not convert percentages or marks out of 100 into a 0-10 scale.
+Do not invent minlength, maxlength, pattern, or range validations unless explicitly stated.
+If the user says "both fields", apply the same validation to both referenced fields.
+If the user asks for two-column layout, schema.layout must be "two-column".
+If the user asks for two-column layout, do not infer multi-step.`
     },
     {
       role: "user",
@@ -157,8 +170,12 @@ Hard requirements:
 - Use correct input types.
 - Use fieldsets and legends for sections.
 - Implement the requested layout.
-- For multi-step layout, include small vanilla JavaScript for Previous/Next navigation and final submit.
+- If layout is two-column, use a CSS grid with two columns on desktop and one column on mobile.
+- If layout is not multi-step, do not include Previous or Next buttons.
+- If layout is not multi-step, do not include step JavaScript.
+- For multi-step layout only, include small vanilla JavaScript for Previous/Next navigation and final submit.
 - Include one submit button.
+- Do not disable the submit button by default.
 - Do not include a form action unless explicitly present in the schema.
 - Keep styling modern, responsive, and accessible.`
     }
@@ -191,8 +208,11 @@ Hard requirements:
 - Use inline styles or locally defined style objects only.
 - Do not use Tailwind classes in generated React unless the user explicitly asks for Tailwind output.
 - Include controlled state only if needed for multi-step navigation or grouped checkbox handling.
-- For multi-step layout, implement Previous/Next state locally with useState.
+- If layout is not multi-step, do not include Previous or Next buttons.
+- If layout is not multi-step, do not include multi-step state.
+- For multi-step layout only, implement Previous/Next state locally with useState.
 - Include one submit button.
+- Do not disable the submit button by default.
 - Do not call external APIs.`
     }
   ];
@@ -221,7 +241,12 @@ Bad code:
 ${code}
 
 Return corrected ${outputType} code only.
-Keep the same fields and validations from the schema.`
+Keep the same fields and validations from the schema.
+Fix only the listed validation errors.
+Do not add new fields, new validations, new buttons, or new JavaScript behavior.
+For two-column layout, use CSS grid with two columns on desktop and one column on mobile.
+For non-multi-step layouts, do not include Previous or Next buttons.
+Do not disable the submit button by default.`
     }
   ];
 }

@@ -821,3 +821,463 @@ The project should be considered aligned with the assignment when:
 5. Add wizard fields for field count, field types, and validations.
 6. Add validation and one repair pass.
 7. Move Ollama calls from plain `/api/generate` prompts to role-based `/api/chat`.
+
+## Post-Test Gaps Found From Generated College Admission Form
+
+### Test input summary
+
+The user asked for a college admission form with:
+
+- 5 fields.
+- Candidate name as text.
+- Candidate date of birth as date.
+- Place as text.
+- 12th marks as number.
+- 10th marks as number.
+- Date of birth required with `YYYY-MM-DD` date format.
+- 12th marks and 10th marks required with range `0` to `100`.
+- Two-column layout.
+- HTML output.
+
+### Generated output issues
+
+The downloaded generated HTML did not fully match the finalized conversation:
+
+- Marks range was wrong:
+  - Expected: `min="0"` and `max="100"`.
+  - Generated: `min="0"` and `max="10"`.
+- Two-column layout was not implemented:
+  - Expected: CSS grid or equivalent two-column field layout.
+  - Generated: stacked fieldsets with no actual two-column CSS.
+- Multi-step controls were incorrectly added:
+  - Expected: two-column form only.
+  - Generated: `Previous`, `Next`, and disabled `Submit` behavior.
+- The submit button was unnecessarily disabled:
+  - Expected: normal submit button with native validation.
+  - Generated: `disabled` submit button controlled by extra JavaScript.
+- Candidate name received invented validations:
+  - Expected: text field, likely required if user confirms all fields or if schema says so.
+  - Generated: `minlength="3"` and `maxlength="50"` without user asking.
+- The assistant leaked markdown-style formatting into chat:
+  - Example: `**Question 1:**`.
+  - This looks unpolished in the app message UI.
+- The assistant leaked fake transcript-style text:
+  - Example: `User: text`.
+  - Assistant messages should never include fabricated `User:` lines.
+
+### Root cause
+
+The current pipeline still trusts the LLM too much after schema generation:
+
+- The schema/code validators do not compare numeric constraints deeply enough.
+- The code validator checks presence of fields but not exact validation values.
+- Layout validation is too shallow.
+- The HTML generation prompt allows the model to add JavaScript behavior that was not requested.
+- Chat rendering displays raw model text, so markdown markers appear as literal text.
+- The interview prompt asks the model to include summaries, but does not forbid markdown syntax or transcript labels strongly enough.
+
+## Required Fixes From Post-Test Gaps
+
+### 1. Strengthen schema extraction rules
+
+The schema extraction prompt must preserve exact validation values from the conversation.
+
+Add strict rules:
+
+```text
+If the user gives a numeric range, preserve the exact min and max values.
+Do not convert percentages or marks out of 100 into a 0-10 scale.
+Do not invent minlength, maxlength, pattern, or range validations unless explicitly stated.
+If the user says "both fields", apply the same validation to both referenced fields.
+If the user asks for two-column layout, schema.layout must be "two-column".
+If the user asks for two-column layout, do not infer multi-step.
+```
+
+For the test case, schema should become:
+
+```json
+{
+  "title": "College Admission Form",
+  "layout": "two-column",
+  "sections": [
+    {
+      "id": "candidate-details",
+      "title": "Candidate Details",
+      "fields": [
+        {
+          "id": "candidateName",
+          "label": "Candidate Name",
+          "type": "text",
+          "required": true,
+          "validation": {},
+          "options": []
+        },
+        {
+          "id": "candidateDateOfBirth",
+          "label": "Candidate Date of Birth",
+          "type": "date",
+          "required": true,
+          "validation": {},
+          "options": []
+        },
+        {
+          "id": "place",
+          "label": "Place",
+          "type": "text",
+          "required": false,
+          "validation": {},
+          "options": []
+        },
+        {
+          "id": "twelfthMarks",
+          "label": "12th Marks",
+          "type": "number",
+          "required": true,
+          "validation": {
+            "min": 0,
+            "max": 100
+          },
+          "options": []
+        },
+        {
+          "id": "tenthMarks",
+          "label": "10th Marks",
+          "type": "number",
+          "required": true,
+          "validation": {
+            "min": 0,
+            "max": 100
+          },
+          "options": []
+        }
+      ]
+    }
+  ],
+  "submitLabel": "Submit"
+}
+```
+
+### 2. Strengthen code validation against schema
+
+The backend code validator should verify exact field-level attributes, not only field presence.
+
+For HTML output, validate:
+
+- Every field id exists as `id="fieldId"`.
+- Every field id exists as `name="fieldId"`.
+- Every label exists with `for="fieldId"`.
+- `required: true` maps to a `required` attribute.
+- `type: number` with `validation.min` maps to exact `min` value.
+- `type: number` with `validation.max` maps to exact `max` value.
+- `minLength` maps to exact `minlength`.
+- `maxLength` maps to exact `maxlength`.
+- `pattern` maps to exact `pattern`.
+- `acceptedFileTypes` maps to `accept`.
+- `layout: two-column` must include CSS that applies a two-column grid/flex layout at desktop width.
+- `layout !== "multi-step"` must reject generated `Previous` and `Next` buttons.
+- `layout !== "multi-step"` must reject JavaScript functions such as `nextStep` and `prevStep`.
+- No disabled submit button unless the schema explicitly asks for disabled-first behavior.
+
+For React output, validate:
+
+- Same field ids and labels through JSX attributes.
+- Exact validation props:
+  - `required`,
+  - `min`,
+  - `max`,
+  - `minLength`,
+  - `maxLength`,
+  - `pattern`,
+  - `accept`.
+- No multi-step state if schema layout is not `multi-step`.
+
+### 3. Add targeted repair errors
+
+When validation fails, repair messages should be very specific.
+
+Example repair errors for the test case:
+
+```json
+[
+  "12th Marks max must be 100, but generated code uses max=10.",
+  "10th Marks max must be 100, but generated code uses max=10.",
+  "Layout is two-column, but generated HTML does not include a two-column field grid.",
+  "Layout is two-column, but generated HTML includes Previous/Next multi-step buttons.",
+  "Submit button must not be disabled by default."
+]
+```
+
+Repair prompt addition:
+
+```text
+Fix only the listed validation errors.
+Do not add new fields, new validations, new buttons, or new JavaScript behavior.
+For two-column layout, use CSS grid with two columns on desktop and one column on mobile.
+For non-multi-step layouts, do not include Previous or Next buttons.
+```
+
+### 4. Make wizard mode a complete generation path
+
+Current UX gap:
+
+- The wizard tab lets the user enter structured fields, but there is no obvious generate/finalize button inside the wizard.
+- This makes the wizard feel decorative instead of functional.
+
+Required behavior:
+
+- Add a primary button inside the wizard tab:
+  - `Generate from wizard`
+  - or `Finalize wizard form`
+- The button should be enabled when at least one valid field exists.
+- Clicking it should bypass the conversation interview and build schema from wizard data.
+- Wizard data should be converted to schema directly in frontend or backend.
+- The LLM should not reinterpret clear wizard data unless needed for styling/code generation.
+
+Recommended wizard flow:
+
+1. User enters form title.
+2. User sets field count.
+3. User fills field rows:
+   - label,
+   - type,
+   - required,
+   - min,
+   - max,
+   - minLength,
+   - maxLength,
+   - pattern,
+   - options.
+4. User clicks `Generate from wizard`.
+5. Backend validates wizard schema.
+6. Backend generates code and preview.
+
+Recommended data path:
+
+```text
+Wizard fields -> deterministic FormSchema -> validate schema -> generate code -> validate code -> repair if needed -> preview/export
+```
+
+Do not use:
+
+```text
+Wizard fields -> natural language prompt -> schema
+```
+
+Reason:
+
+- The wizard is already structured.
+- Sending it back through natural language increases the chance of changed ranges, missing required flags, or invented validations.
+
+### 5. Remove output and layout dropdowns from chat section
+
+Current UX gap:
+
+- Output type and layout dropdowns appear inside the chat area.
+- The assistant also asks for layout/output, creating duplicate decisions.
+- This makes the left column feel cluttered.
+
+Required behavior:
+
+- Remove output type and layout dropdowns from the chat section.
+- Put global generation settings in a compact top toolbar above the workspace or above the editor:
+  - Output: segmented control with `HTML` and `React`.
+  - Layout: only show this as an optional global preference outside the chat, or let the assistant ask in conversation.
+- If layout is selected globally, the assistant should treat it as known and not ask again unless the user contradicts it.
+- If layout is not selected globally, assistant should ask during the interview.
+
+Recommended UI:
+
+```text
+Top toolbar:
+[Output: HTML | React]    [Default layout: Auto | Single | Two-column | Cards | Multi-step]
+
+Left panel:
+Chat messages
+User input
+Send / Finalize
+
+Right panel:
+Live preview
+
+Bottom:
+Code editor + copy/download/regenerate
+```
+
+### 6. Make the chat column more professional and user friendly
+
+Current UX gap:
+
+- The chat panel looks basic.
+- Message text exposes markdown syntax such as `**Question 1:**`.
+- The assistant can produce verbose, repetitive messages.
+- There is no strong visual hierarchy for current draft vs question.
+
+Required behavior:
+
+- Render chat as clean message bubbles.
+- Use separate visual treatments for:
+  - assistant messages,
+  - user messages,
+  - current form draft,
+  - finalization prompt.
+- Remove raw markdown symbols before rendering.
+- Keep the chat input fixed at the bottom of the left panel when possible.
+- Make the message list scroll independently.
+- Add clear actions:
+  - `Send`
+  - `Finalize`
+  - `Clear chat`
+- Add small helper chips for common replies:
+  - `All fields required`
+  - `Two-column layout`
+  - `HTML output`
+  - `React output`
+  - `Generate now`
+
+Recommended visual structure:
+
+```text
+Assistant bubble:
+Question 4
+What type should the Place field be?
+
+Current form draft
+Candidate Name - text
+Candidate Date of Birth - date, required
+Place - pending
+
+[Text] [Select] [Date] [Number]
+```
+
+Avoid showing:
+
+```text
+**Question 4:**
+User: text
+```
+
+### 7. Sanitize assistant messages before display
+
+The frontend should sanitize display text from the model.
+
+Minimum sanitizer:
+
+- Replace `**text**` with `text`.
+- Remove lines beginning with `User:`.
+- Trim repeated blank lines.
+- Optionally convert simple draft lines into structured UI later.
+
+Example:
+
+```js
+function cleanAssistantMessage(text) {
+  return String(text || "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("User:"))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+```
+
+Backend prompt should also forbid markdown:
+
+```text
+Do not use markdown syntax.
+Do not use bold markers.
+Do not prefix lines with "User:" or "Assistant:".
+Write plain text only.
+```
+
+### 8. Improve interviewer behavior
+
+The assistant asked too many one-field-at-a-time questions even after the user had provided all five fields.
+
+Required behavior:
+
+- If the user provides a list of fields, the assistant should capture all of them at once.
+- Ask grouped follow-up questions instead of one field per turn.
+- Ask no more than 3 questions per message.
+- Prefer asking about missing types/validations in batches.
+
+Better behavior for the test input:
+
+```text
+I have 5 fields:
+- Candidate Name
+- Candidate Date of Birth
+- Place
+- 12th Marks
+- 10th Marks
+
+Please confirm:
+1. Should Candidate Name and Place be text fields?
+2. Should Date of Birth be a date field?
+3. Should both marks fields be numbers with a 0 to 100 range?
+```
+
+Prompt addition:
+
+```text
+If the user provides multiple fields in one message, capture all fields in the current draft.
+Do not ask for the first field again.
+Ask grouped follow-up questions for missing types and validations.
+Avoid one-question-per-field unless the user gave only one unclear field.
+```
+
+### 9. Layout-specific generation rules
+
+For two-column layout:
+
+- Use CSS grid.
+- Desktop:
+  - two equal columns.
+- Mobile:
+  - one column.
+- Full-width rows for:
+  - section legends,
+  - submit button,
+  - textarea if appropriate.
+
+Required HTML/CSS pattern:
+
+```css
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+Generated HTML should place fields inside `.form-grid`.
+
+Reject this when layout is two-column:
+
+- all fields stacked with no grid/flex layout,
+- Previous/Next buttons,
+- step JavaScript,
+- disabled submit by default.
+
+### 10. Updated highest-priority fixes after real output test
+
+1. Add exact validation matching in `codeValidator.js`.
+2. Reject multi-step controls unless schema layout is `multi-step`.
+3. Enforce two-column CSS/layout checks for `two-column`.
+4. Update prompts to forbid markdown and `User:` transcript leakage.
+5. Sanitize assistant messages before rendering.
+6. Add `Generate from wizard` inside wizard mode.
+7. Move output/layout controls out of the chat panel into a global toolbar.
+8. Improve chat panel visual design and message structure.
+9. Make wizard generate deterministic schema directly.
+10. Add a regression test using the college admission conversation.

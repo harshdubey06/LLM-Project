@@ -17,8 +17,7 @@ export default function PromptPanel({
   mode,
   messages,
   currentMessage,
-  outputType,
-  layoutPreference,
+  formTitle,
   fieldCount,
   manualFields,
   conversationStatus,
@@ -28,16 +27,17 @@ export default function PromptPanel({
   isLoading,
   canSend,
   canFinalize,
+  canGenerateWizard,
   error,
   onModeChange,
   onCurrentMessageChange,
-  onOutputTypeChange,
-  onLayoutPreferenceChange,
+  onFormTitleChange,
   onFieldCountChange,
   onManualFieldsChange,
   onSchemaDraftChange,
   onSendMessage,
   onFinalize,
+  onGenerateFromWizard,
   onGenerateFromSchema
 }) {
   return (
@@ -59,13 +59,6 @@ export default function PromptPanel({
         </button>
       </div>
 
-      <FormSettings
-        outputType={outputType}
-        layoutPreference={layoutPreference}
-        onOutputTypeChange={onOutputTypeChange}
-        onLayoutPreferenceChange={onLayoutPreferenceChange}
-      />
-
       {mode === "chat" ? (
         <ChatPanel
           messages={messages}
@@ -83,10 +76,15 @@ export default function PromptPanel({
 
       {mode === "wizard" ? (
         <WizardPanel
+          formTitle={formTitle}
           fieldCount={fieldCount}
           manualFields={manualFields}
+          canGenerateWizard={canGenerateWizard}
+          isLoading={isLoading}
+          onFormTitleChange={onFormTitleChange}
           onFieldCountChange={onFieldCountChange}
           onManualFieldsChange={onManualFieldsChange}
+          onGenerateFromWizard={onGenerateFromWizard}
         />
       ) : null}
 
@@ -101,38 +99,6 @@ export default function PromptPanel({
 
       {error ? <p className="error-message">{error}</p> : null}
     </section>
-  );
-}
-
-function FormSettings({ outputType, layoutPreference, onOutputTypeChange, onLayoutPreferenceChange }) {
-  return (
-    <div className="settings-grid">
-      <div>
-        <label className="field-label" htmlFor="output-type">
-          Output type
-        </label>
-        <select id="output-type" value={outputType} onChange={(event) => onOutputTypeChange(event.target.value)}>
-          <option value="html">Self-contained HTML</option>
-          <option value="react">React component</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="field-label" htmlFor="layout-preference">
-          Layout
-        </label>
-        <select
-          id="layout-preference"
-          value={layoutPreference}
-          onChange={(event) => onLayoutPreferenceChange(event.target.value)}
-        >
-          <option value="single-column">Single-column</option>
-          <option value="two-column">Two-column</option>
-          <option value="card-sections">Card sections</option>
-          <option value="multi-step">Multi-step</option>
-        </select>
-      </div>
-    </div>
   );
 }
 
@@ -164,7 +130,7 @@ function ChatPanel({
         {messages.map((message, index) => (
           <article className={`message ${message.role}`} key={`${message.role}-${index}`}>
             <strong>{message.role === "assistant" ? "Assistant" : "You"}</strong>
-            <p>{message.content}</p>
+            <p>{cleanDisplayMessage(message.content)}</p>
           </article>
         ))}
       </div>
@@ -181,6 +147,14 @@ function ChatPanel({
         placeholder="Describe the form or answer the assistant. Type 'ok final done' when the details are complete."
       />
 
+      <div className="quick-replies" aria-label="Quick replies">
+        {["All fields required", "Two-column layout", "HTML output", "React output", "Generate now"].map((reply) => (
+          <button type="button" key={reply} onClick={() => onCurrentMessageChange(reply)}>
+            {reply}
+          </button>
+        ))}
+      </div>
+
       <div className="action-row">
         <button className="primary-action" type="button" disabled={!canSend} onClick={onSendMessage}>
           {isLoading ? "Working..." : "Send"}
@@ -193,7 +167,17 @@ function ChatPanel({
   );
 }
 
-function WizardPanel({ fieldCount, manualFields, onFieldCountChange, onManualFieldsChange }) {
+function WizardPanel({
+  formTitle,
+  fieldCount,
+  manualFields,
+  canGenerateWizard,
+  isLoading,
+  onFormTitleChange,
+  onFieldCountChange,
+  onManualFieldsChange,
+  onGenerateFromWizard
+}) {
   function syncFieldCount(count) {
     const nextCount = Math.max(0, Number(count) || 0);
     onFieldCountChange(String(nextCount || ""));
@@ -212,6 +196,17 @@ function WizardPanel({ fieldCount, manualFields, onFieldCountChange, onManualFie
 
   return (
     <div className="wizard-panel">
+      <label className="field-label" htmlFor="form-title">
+        Form title
+      </label>
+      <input
+        id="form-title"
+        type="text"
+        placeholder="College Admission Form"
+        value={formTitle}
+        onChange={(event) => onFormTitleChange(event.target.value)}
+      />
+
       <label className="field-label" htmlFor="field-count">
         Number of fields
       </label>
@@ -257,6 +252,44 @@ function WizardPanel({ fieldCount, manualFields, onFieldCountChange, onManualFie
               value={field.validationNote}
               onChange={(event) => updateField(index, { validationNote: event.target.value })}
             />
+            <div className="validation-grid">
+              <input
+                aria-label={`Field ${index + 1} minimum`}
+                placeholder="Min"
+                value={field.min}
+                onChange={(event) => updateField(index, { min: event.target.value })}
+              />
+              <input
+                aria-label={`Field ${index + 1} maximum`}
+                placeholder="Max"
+                value={field.max}
+                onChange={(event) => updateField(index, { max: event.target.value })}
+              />
+              <input
+                aria-label={`Field ${index + 1} minimum length`}
+                placeholder="Min length"
+                value={field.minLength}
+                onChange={(event) => updateField(index, { minLength: event.target.value })}
+              />
+              <input
+                aria-label={`Field ${index + 1} maximum length`}
+                placeholder="Max length"
+                value={field.maxLength}
+                onChange={(event) => updateField(index, { maxLength: event.target.value })}
+              />
+            </div>
+            <input
+              aria-label={`Field ${index + 1} pattern`}
+              placeholder="Regex pattern"
+              value={field.pattern}
+              onChange={(event) => updateField(index, { pattern: event.target.value })}
+            />
+            <input
+              aria-label={`Field ${index + 1} accepted file types`}
+              placeholder="Accepted files e.g. .pdf,.doc"
+              value={field.acceptedFileTypes}
+              onChange={(event) => updateField(index, { acceptedFileTypes: event.target.value })}
+            />
             <input
               aria-label={`Field ${index + 1} options`}
               placeholder="Options for select/radio, comma separated"
@@ -266,6 +299,10 @@ function WizardPanel({ fieldCount, manualFields, onFieldCountChange, onManualFie
           </div>
         ))}
       </div>
+
+      <button className="primary-action" type="button" disabled={!canGenerateWizard || isLoading} onClick={onGenerateFromWizard}>
+        {isLoading ? "Generating..." : "Generate from wizard"}
+      </button>
     </div>
   );
 }
@@ -298,6 +335,22 @@ function createEmptyField() {
     type: "text",
     required: false,
     validationNote: "",
+    min: "",
+    max: "",
+    minLength: "",
+    maxLength: "",
+    pattern: "",
+    acceptedFileTypes: "",
     optionsText: ""
   };
+}
+
+function cleanDisplayMessage(text) {
+  return String(text || "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("User:") && !line.trim().startsWith("Assistant:"))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

@@ -1,18 +1,26 @@
+import { downloadReactProject } from "../utils/projectExporter.js";
+
 export default function Toolbar({ code, outputType, onRegenerate, canRegenerate }) {
   async function copyCode() {
     await navigator.clipboard.writeText(code);
   }
 
-  function downloadCode() {
-    const extension = outputType === "react" ? "jsx" : "html";
-    const mimeType = outputType === "react" ? "text/jsx" : "text/html";
-    const blob = new Blob([code], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `generated-form.${extension}`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+  async function downloadCode() {
+    if (outputType === "react") {
+      try {
+        await downloadReactProject(code);
+      } catch (error) {
+        alert("Failed to export project: " + error.message);
+      }
+    } else {
+      const blob = new Blob([code], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "generated-form.html";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    }
   }
 
   return (

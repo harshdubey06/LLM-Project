@@ -1,0 +1,14 @@
+# Ignore local node packages
+node_modules/
+
+# Ignore production builds
+dist/
+build/
+
+# Ignore local environment files
+.env
+.env.local
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db

@@ -10,7 +10,8 @@ const fieldTypes = [
   "select",
   "radio",
   "checkbox",
-  "file"
+  "file",
+  "dropdown"
 ];
 
 export default function PromptPanel({
@@ -290,12 +291,46 @@ function WizardPanel({
               value={field.acceptedFileTypes}
               onChange={(event) => updateField(index, { acceptedFileTypes: event.target.value })}
             />
-            <input
-              aria-label={`Field ${index + 1} options`}
-              placeholder="Options for select/radio, comma separated"
-              value={field.optionsText}
-              onChange={(event) => updateField(index, { optionsText: event.target.value })}
-            />
+            {field.type === "dropdown" ? (
+              <div style={{ marginTop: "8px", display: "grid", gap: "8px" }}>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Number of options"
+                  value={field.numOptions || ""}
+                  onChange={(event) => {
+                    const count = Math.max(0, parseInt(event.target.value) || 0);
+                    const currentOptions = field.options || [];
+                    let newOptions;
+                    if (count > currentOptions.length) {
+                      newOptions = [...currentOptions, ...Array(count - currentOptions.length).fill("")];
+                    } else {
+                      newOptions = currentOptions.slice(0, count);
+                    }
+                    updateField(index, { numOptions: event.target.value, options: newOptions });
+                  }}
+                />
+                {field.options && field.options.map((option, optIndex) => (
+                  <input
+                    key={optIndex}
+                    placeholder={`Option ${optIndex + 1}`}
+                    value={option}
+                    onChange={(event) => {
+                      const newOptions = [...(field.options || [])];
+                      newOptions[optIndex] = event.target.value;
+                      updateField(index, { options: newOptions });
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <input
+                aria-label={`Field ${index + 1} options`}
+                placeholder="Options for select/radio, comma separated"
+                value={field.optionsText}
+                onChange={(event) => updateField(index, { optionsText: event.target.value })}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -341,7 +376,9 @@ function createEmptyField() {
     maxLength: "",
     pattern: "",
     acceptedFileTypes: "",
-    optionsText: ""
+    optionsText: "",
+    numOptions: "",
+    options: []
   };
 }
 

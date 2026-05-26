@@ -236,16 +236,18 @@ function serializeManualFields(fields) {
     .filter((field) => field.label.trim())
     .map((field) => ({
       label: field.label.trim(),
-      type: field.type,
+      type: field.type === "dropdown" ? "select" : field.type,
       required: field.required,
       validation: {
         ...parseValidationNote(field.validationNote),
         ...parseDirectValidation(field)
       },
-      options: String(field.optionsText || "")
-        .split(",")
-        .map((option) => option.trim())
-        .filter(Boolean)
+      options: field.type === "dropdown"
+        ? (field.options || []).map((option) => option.trim()).filter(Boolean)
+        : String(field.optionsText || "")
+            .split(",")
+            .map((option) => option.trim())
+            .filter(Boolean)
     }));
 }
 

@@ -44,7 +44,7 @@ export default function PromptPanel({
   return (
     <section className="prompt-panel" aria-label="Form requirement">
       <div className="panel-heading">
-        <p className="eyebrow">Local Qwen + Ollama</p>
+        <p className="eyebrow"> For Best Experience</p>
         <h1>AI-Powered Form Builder</h1>
       </div>
 

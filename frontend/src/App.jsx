@@ -187,7 +187,7 @@ export default function App() {
         </div>
       </section>
 
-      <section className="workspace">
+      <section className={`workspace ${mode === "wizard" ? "wizard-active" : ""}`}>
         <PromptPanel
           mode={mode}
           messages={messages}
@@ -215,7 +215,7 @@ export default function App() {
           onGenerateFromWizard={handleGenerateFromWizard}
           onGenerateFromSchema={() => handleGenerateFromSchema(schemaDraft || schema)}
         />
-        <LivePreview code={previewHtml} />
+        {mode !== "wizard" && <LivePreview code={previewHtml} />}
       </section>
 
       <section className="editor-section">

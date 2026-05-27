@@ -88,6 +88,10 @@ textarea {
   margin-bottom: 20px;
 }
 
+.workspace.wizard-active {
+  grid-template-columns: 1fr;
+}
+
 .prompt-panel,
 .preview-panel,
 .editor-section {

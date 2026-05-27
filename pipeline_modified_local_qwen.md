@@ -117,7 +117,7 @@ ollama run qwen2.5-coder:14b
 | 4 | Monaco code editor | Displays generated HTML or React code |
 | 5 | Live preview iframe | Renders the generated form using `srcDoc` |
 | 6 | Copy code button | Copies generated code to clipboard |
-| 7 | Download button | Downloads generated code as `.html` or `.jsx` |
+| 7 | Download button | Downloads generated HTML file or bundles React project as a `.zip` archive |
 | 8 | Output mode selector | Allows user to choose plain HTML or React output |
 | 9 | Regenerate button | Re-runs the same prompt if output quality is not acceptable |
 
@@ -234,6 +234,33 @@ Output rules:
 - If JavaScript is required, place it inside a <script> tag at the end of <body>.
 ```
 
+### System prompt for React output
+
+```text
+You are an expert React engineer specializing in clean, semantic, and accessible React form components.
+
+When a form schema is provided, generate a complete, single-file React component that:
+- Exports a default React component named GeneratedForm.
+- Uses semantic HTML5 form elements mapped to JSX (e.g., <form>, <label>, <input>, <select>, <textarea>).
+- Associates every control with a visible <label> using matching htmlFor and id attributes.
+- Preserves the exact fields, input types, and validation rules specified in the schema.
+- Applies standard form validations (required, pattern, min, max, minLength, maxLength) and preserves exact numerical validation thresholds.
+- Implements layout choices (single-column, two-column grid, card-based sections, or multi-step) using local style objects or inline styles.
+- Avoids using tailwind utility classes unless the user explicitly requests a Tailwind layout style.
+- Dynamically renders select, radio, and checkbox options from the schema options array.
+- For a multi-step layout, imports useState from "react" and implements navigation step state locally.
+- Includes a submit button with type="submit" and handles onSubmit appropriately.
+- Does not import third-party libraries (e.g., component libraries, form utilities, external icon packages).
+- Does not call external APIs or endpoints.
+
+Output rules:
+- Return ONLY the React component JSX/JavaScript code.
+- Do not include markdown fences.
+- Do not include explanations before or after the code.
+- Do not include comments or commentary inside the code.
+- Note for export: When this generated React component is downloaded, the system automatically packages it with standard React + Vite + Tailwind boilerplate config files and delivers it to the user as a ready-to-run ZIP project folder.
+```
+
 ### User prompt template
 
 ```text
@@ -305,13 +332,18 @@ navigator.clipboard.writeText(cleanedCode);
 5. Download code using:
 
 ```js
-const blob = new Blob([cleanedCode], { type: "text/html" });
-const url = URL.createObjectURL(blob);
-const a = document.createElement("a");
-a.href = url;
-a.download = "generated-form.html";
-a.click();
-URL.revokeObjectURL(url);
+if (outputType === "react") {
+  // Uses JSZip to bundle React boilerplate and target component as a ZIP
+  await downloadReactProject(cleanedCode);
+} else {
+  const blob = new Blob([cleanedCode], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "generated-form.html";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 ```
 
 ---
@@ -350,7 +382,8 @@ URL.revokeObjectURL(url);
 │       ├── services/
 │       │   └── formApi.js
 │       └── utils/
-│           └── extractCode.js
+│           ├── extractCode.js
+│           └── projectExporter.js
 │
 ├── backend/
 │   ├── package.json
@@ -490,7 +523,7 @@ The final deliverable should include:
 - Monaco code preview.
 - Live form preview.
 - Copy-to-clipboard option.
-- Download generated form option.
+- Download generated form option (HTML or full React ZIP project bundle).
 - Basic error handling for Ollama/model failures.
 
 ---
@@ -509,5 +542,9 @@ The project now depends on:
 - Local Ollama runtime
 - Local Qwen model
 - Backend-mediated LLM calls
+
+Additional Features Added:
+- **ZIP Project Exporter**: Packaged Vite + React + Tailwind boilerplate using `jszip` for complete application scaffolding in React mode.
+- **Dropdown field support in Wizard**: Wizard panel includes option-specification interfaces for dropdowns, dynamically generating JSON schemas with custom options lists.
 
 This keeps the application aligned with the requirement: **use a locally hosted open-source LLM to generate functional form code from natural language.**
